@@ -11,8 +11,10 @@ The repository includes the first end-to-end receive path:
 1. listen for Telegram voice messages;
 2. accept messages only from configured chat IDs;
 3. download each note to a local inbox;
-4. hand it to a platform-independent audio player;
-5. return the device state to idle.
+4. queue and play notes sequentially with one automatic retry;
+5. acknowledge playback to the originating chat;
+6. remove expired local media according to the retention policy;
+7. return the device state to idle.
 
 Sending recordings and physical controls are intentionally represented by interfaces and follow-up milestones.
 
@@ -59,6 +61,10 @@ voicebox run
 
 The setup command refuses to overwrite an existing `.env`; the file is ignored by Git
 and created with owner-only permissions. Never commit real tokens.
+
+Playback defaults to two attempts, and downloaded audio older than 24 hours is removed
+at startup. Both values can be changed with `VOICEBOX_PLAYBACK_ATTEMPTS` and
+`VOICEBOX_MEDIA_RETENTION_HOURS`.
 
 `ffplay` is preferred for Telegram's Ogg/Opus voice-note format. On macOS it is
 available through the `ffmpeg` package; native `afplay` is kept as a fallback but may

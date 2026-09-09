@@ -45,16 +45,21 @@ sequenceDiagram
     participant F as Trusted family member
     participant T as Telegram adapter
     participant C as VoiceBox core
+    participant Q as Playback queue
     participant P as Local audio player
 
     F->>T: Send voice note
     T->>T: Verify chat allowlist
     T->>T: Download to local inbox
     T->>C: VoiceNote metadata + path
+    C->>Q: Enqueue note
+    Q->>C: Next note in arrival order
     C->>C: idle → receiving → playing
     C->>P: Play local file
     P-->>C: Playback complete
     C->>C: playing → idle
+    C->>T: Send playback acknowledgement
+    T-->>F: Delivery status
 ```
 
 ## Design decisions
@@ -63,8 +68,11 @@ sequenceDiagram
 - **Deny by default:** Telegram chat IDs must be explicitly configured before the service starts.
 - **Local-first media:** the core receives a local path, so playback does not depend on provider objects.
 - **One interaction at a time:** the state machine makes device behavior observable and prevents ambiguous transitions.
+- **Serialized playback:** a queue prevents overlapping notes and preserves arrival order.
+- **Bounded recovery:** local playback is retried once before the family receives a failure status.
+- **Data minimization:** expired voice-note files are deleted on startup using a configurable policy.
 - **Secrets outside source:** bot credentials are loaded from an ignored `.env` file or the runtime environment.
 
 ## Next implementation slice
 
-Add a queue between receipt and playback so multiple notes are serialized, acknowledge successful playback through the messaging boundary, and enforce a configurable retention policy for downloaded media.
+Add laptop recording and sending behind the existing recorder and controls protocols.

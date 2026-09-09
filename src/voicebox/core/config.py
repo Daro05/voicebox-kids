@@ -15,6 +15,8 @@ class Settings:
     allowed_chat_ids: frozenset[int]
     inbox_dir: Path = Path("data/inbox")
     audio_player: str | None = None
+    playback_attempts: int = 2
+    media_retention_hours: int = 24
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -33,9 +35,25 @@ class Settings:
         if not chat_ids:
             raise ValueError("Configure at least one TELEGRAM_ALLOWED_CHAT_IDS value.")
 
+        playback_attempts = _positive_int("VOICEBOX_PLAYBACK_ATTEMPTS", default=2)
+        retention_hours = _positive_int("VOICEBOX_MEDIA_RETENTION_HOURS", default=24)
+
         return cls(
             telegram_bot_token=token,
             allowed_chat_ids=chat_ids,
             inbox_dir=Path(os.getenv("VOICEBOX_INBOX_DIR", "data/inbox")),
             audio_player=os.getenv("VOICEBOX_AUDIO_PLAYER") or None,
+            playback_attempts=playback_attempts,
+            media_retention_hours=retention_hours,
         )
+
+
+def _positive_int(name: str, *, default: int) -> int:
+    raw_value = os.getenv(name, str(default)).strip()
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a positive integer.") from exc
+    if value < 1:
+        raise ValueError(f"{name} must be a positive integer.")
+    return value

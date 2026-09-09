@@ -27,6 +27,8 @@ def render_env(token: str, chat_id: int, audio_player: str | None = None) -> str
         f"TELEGRAM_ALLOWED_CHAT_IDS={chat_id}",
         "VOICEBOX_INBOX_DIR=data/inbox",
         f"VOICEBOX_AUDIO_PLAYER={audio_player or ''}",
+        "VOICEBOX_PLAYBACK_ATTEMPTS=2",
+        "VOICEBOX_MEDIA_RETENTION_HOURS=24",
     ]
     return "\n".join(lines) + "\n"
 

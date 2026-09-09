@@ -6,12 +6,13 @@ import argparse
 import asyncio
 import logging
 from collections.abc import Sequence
+from datetime import timedelta
 from pathlib import Path
 
 from voicebox.audio.player import AudioPlayerUnavailableError, LocalAudioPlayer
 from voicebox.core.config import Settings
-from voicebox.core.state_machine import DeviceState, StateMachine
-from voicebox.messaging.base import VoiceNote
+from voicebox.core.controller import VoiceBoxController
+from voicebox.core.retention import MediaRetentionPolicy
 from voicebox.messaging.telegram import TelegramMessagingAdapter
 from voicebox.setup import run_guided_setup
 
@@ -21,28 +22,30 @@ logger = logging.getLogger(__name__)
 async def run_voicebox() -> None:
     settings = Settings.from_env()
     player = LocalAudioPlayer(settings.audio_player)
-    state = StateMachine()
     messaging = TelegramMessagingAdapter(
         token=settings.telegram_bot_token,
         allowed_chat_ids=settings.allowed_chat_ids,
         inbox_dir=settings.inbox_dir,
     )
-
-    async def on_voice_note(note: VoiceNote) -> None:
-        try:
-            state.transition_to(DeviceState.RECEIVING)
-            logger.info("Received voice note from approved chat %s", note.chat_id)
-            state.transition_to(DeviceState.PLAYING)
-            await player.play(note.local_path)
-            state.transition_to(DeviceState.IDLE)
-        except Exception:
-            logger.exception("Could not process voice note")
-            if state.state is not DeviceState.ERROR:
-                state.transition_to(DeviceState.ERROR)
-            state.transition_to(DeviceState.IDLE)
+    controller = VoiceBoxController(
+        player,
+        messaging,
+        playback_attempts=settings.playback_attempts,
+    )
+    retention = MediaRetentionPolicy(
+        settings.inbox_dir,
+        max_age=timedelta(hours=settings.media_retention_hours),
+    )
+    removed = retention.prune()
+    if removed:
+        logger.info("Removed %s expired voice note(s)", len(removed))
 
     logger.info("VoiceBox is listening for approved Telegram voice notes")
-    await messaging.run(on_voice_note)
+    await controller.start()
+    try:
+        await messaging.run(controller.submit)
+    finally:
+        await controller.stop()
 
 
 def build_parser() -> argparse.ArgumentParser:

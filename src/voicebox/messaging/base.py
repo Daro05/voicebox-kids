@@ -27,3 +27,7 @@ class MessagingAdapter(Protocol):
     async def send_voice_note(self, chat_id: str, path: Path) -> None:
         """Send one local recording through the provider."""
         ...
+
+    async def send_text(self, chat_id: str, text: str) -> None:
+        """Send a short provider-neutral status message."""
+        ...

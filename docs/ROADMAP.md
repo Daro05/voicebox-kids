@@ -7,7 +7,7 @@
 - [x] Receive allowlisted Telegram voice notes and download them locally.
 - [x] Play downloaded notes through a detected local audio command.
 - [x] Add guided bot verification, chat discovery, and environment diagnostics.
-- [ ] Add queued playback, acknowledgements, and media retention.
+- [x] Add queued playback, acknowledgements, playback retry, and media retention.
 - [ ] Add a laptop microphone recorder and send path.
 
 ## Phase 2 — Interaction model

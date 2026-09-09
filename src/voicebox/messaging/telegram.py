@@ -14,6 +14,11 @@ from voicebox.messaging.base import VoiceNote, VoiceNoteHandler
 logger = logging.getLogger(__name__)
 
 
+def is_chat_allowed(chat_id: int, allowed_chat_ids: frozenset[int]) -> bool:
+    """Keep the provider boundary deny-by-default and easy to unit test."""
+    return chat_id in allowed_chat_ids
+
+
 class TelegramMessagingAdapter:
     def __init__(self, token: str, allowed_chat_ids: frozenset[int], inbox_dir: Path) -> None:
         self._allowed_chat_ids = allowed_chat_ids
@@ -29,7 +34,7 @@ class TelegramMessagingAdapter:
             sender = update.effective_user
             if message is None or chat is None or message.voice is None:
                 return
-            if chat.id not in self._allowed_chat_ids:
+            if not is_chat_allowed(chat.id, self._allowed_chat_ids):
                 logger.warning("Ignored voice note from unapproved chat %s", chat.id)
                 return
 
@@ -62,3 +67,6 @@ class TelegramMessagingAdapter:
     async def send_voice_note(self, chat_id: str, path: Path) -> None:
         with path.open("rb") as voice:
             await self._application.bot.send_voice(chat_id=int(chat_id), voice=voice)
+
+    async def send_text(self, chat_id: str, text: str) -> None:
+        await self._application.bot.send_message(chat_id=int(chat_id), text=text)
