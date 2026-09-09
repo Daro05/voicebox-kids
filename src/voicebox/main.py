@@ -19,6 +19,12 @@ from voicebox.setup import run_guided_setup
 logger = logging.getLogger(__name__)
 
 
+def configure_logging() -> None:
+    """Enable application logs without exposing Telegram credentials in request URLs."""
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
 async def run_voicebox() -> None:
     settings = Settings.from_env()
     player = LocalAudioPlayer(settings.audio_player)
@@ -98,7 +104,7 @@ async def dispatch(argv: Sequence[str] | None = None) -> int:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    configure_logging()
     try:
         raise SystemExit(asyncio.run(dispatch()))
     except (KeyboardInterrupt, SystemExit):
