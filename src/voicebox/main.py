@@ -74,6 +74,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def doctor() -> bool:
     healthy = True
+    settings: Settings | None = None
     try:
         settings = Settings.from_env()
         print(f"✓ Configuration loaded; {len(settings.allowed_chat_ids)} chat(s) approved.")
@@ -81,10 +82,18 @@ def doctor() -> bool:
         print(f"✗ Configuration: {exc}")
         healthy = False
 
-    command = LocalAudioPlayer.detect_command()
+    if settings and settings.audio_player:
+        command = (
+            settings.audio_player
+            if LocalAudioPlayer.is_command_available(settings.audio_player)
+            else None
+        )
+    else:
+        command = LocalAudioPlayer.detect_command()
     if command:
-        print(f"✓ Audio player available: {command}.")
-        if command == "afplay":
+        player_name = Path(command).name
+        print(f"✓ Audio player available: {player_name}.")
+        if player_name == "afplay":
             print("! ffplay is recommended for Telegram Ogg/Opus compatibility.")
     else:
         print("✗ Audio player: install ffplay or configure VOICEBOX_AUDIO_PLAYER.")

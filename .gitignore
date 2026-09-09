@@ -13,6 +13,9 @@ build/
 # Environments and secrets
 .venv/
 venv/
+.ffmpeg/
+.conda-pkgs/
+.conda-envs/
 .env
 .env.*
 !.env.example

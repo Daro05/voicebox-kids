@@ -28,6 +28,10 @@ class LocalAudioPlayer:
                 return command
         return None
 
+    @staticmethod
+    def is_command_available(command: str) -> bool:
+        return shutil.which(command) is not None
+
     @classmethod
     def _detect_command(cls) -> str:
         command = cls.detect_command()
@@ -38,7 +42,7 @@ class LocalAudioPlayer:
         )
 
     def build_command(self, path: Path) -> tuple[str, ...]:
-        if self.command == "ffplay":
+        if Path(self.command).name == "ffplay":
             return (self.command, "-nodisp", "-autoexit", "-loglevel", "error", str(path))
         return (self.command, str(path))
 
