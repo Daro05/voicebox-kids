@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
+from collections.abc import Sequence
+from pathlib import Path
 
-from voicebox.audio.player import LocalAudioPlayer
+from voicebox.audio.player import AudioPlayerUnavailableError, LocalAudioPlayer
 from voicebox.core.config import Settings
 from voicebox.core.state_machine import DeviceState, StateMachine
 from voicebox.messaging.base import VoiceNote
 from voicebox.messaging.telegram import TelegramMessagingAdapter
+from voicebox.setup import run_guided_setup
 
 logger = logging.getLogger(__name__)
 
 
-async def run() -> None:
+async def run_voicebox() -> None:
     settings = Settings.from_env()
     player = LocalAudioPlayer(settings.audio_player)
     state = StateMachine()
@@ -41,13 +45,62 @@ async def run() -> None:
     await messaging.run(on_voice_note)
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="voicebox",
+        description="Run and configure the VoiceBox Kids laptop prototype.",
+    )
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.add_parser("run", help="Listen for approved Telegram voice notes.")
+    setup_parser = subparsers.add_parser("setup", help="Configure Telegram securely.")
+    setup_parser.add_argument(
+        "--env-file",
+        type=Path,
+        default=Path(".env"),
+        help="Configuration file to create (default: .env).",
+    )
+    subparsers.add_parser("doctor", help="Check configuration and local audio support.")
+    return parser
+
+
+def doctor() -> bool:
+    healthy = True
+    try:
+        settings = Settings.from_env()
+        print(f"✓ Configuration loaded; {len(settings.allowed_chat_ids)} chat(s) approved.")
+    except ValueError as exc:
+        print(f"✗ Configuration: {exc}")
+        healthy = False
+
+    command = LocalAudioPlayer.detect_command()
+    if command:
+        print(f"✓ Audio player available: {command}.")
+        if command == "afplay":
+            print("! ffplay is recommended for Telegram Ogg/Opus compatibility.")
+    else:
+        print("✗ Audio player: install ffplay or configure VOICEBOX_AUDIO_PLAYER.")
+        healthy = False
+    return healthy
+
+
+async def dispatch(argv: Sequence[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if args.command == "setup":
+        await run_guided_setup(args.env_file)
+        return 0
+    if args.command == "doctor":
+        return 0 if doctor() else 1
+    await run_voicebox()
+    return 0
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     try:
-        asyncio.run(run())
+        raise SystemExit(asyncio.run(dispatch()))
     except (KeyboardInterrupt, SystemExit):
-        logger.info("VoiceBox stopped")
-    except ValueError as exc:
+        raise
+    except (AudioPlayerUnavailableError, FileExistsError, TimeoutError, ValueError) as exc:
         raise SystemExit(str(exc)) from exc
 
 

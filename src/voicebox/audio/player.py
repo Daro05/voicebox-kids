@@ -14,16 +14,25 @@ class AudioPlayerUnavailableError(RuntimeError):
 class LocalAudioPlayer:
     """Play audio files through a small, replaceable operating-system adapter."""
 
-    _CANDIDATES = ("afplay", "ffplay", "paplay", "mpg123")
+    # ffplay is preferred because Telegram voice notes use Ogg/Opus, which is not
+    # supported consistently by native players on every operating system.
+    _CANDIDATES = ("ffplay", "paplay", "mpg123", "afplay")
 
     def __init__(self, command: str | None = None) -> None:
         self.command = command or self._detect_command()
 
     @classmethod
-    def _detect_command(cls) -> str:
+    def detect_command(cls) -> str | None:
         for command in cls._CANDIDATES:
             if shutil.which(command):
                 return command
+        return None
+
+    @classmethod
+    def _detect_command(cls) -> str:
+        command = cls.detect_command()
+        if command:
+            return command
         raise AudioPlayerUnavailableError(
             "No supported audio player found. Install ffplay or set VOICEBOX_AUDIO_PLAYER."
         )

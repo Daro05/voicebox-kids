@@ -44,17 +44,25 @@ Requirements:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install ".[dev]"
 cp .env.example .env
 ```
 
-Add your bot token and the numeric IDs of approved family chats to `.env`, then run:
+Run the guided setup. It verifies the bot, waits for a voice note to discover the
+approved chat ID, and creates a private `.env` file without printing the token:
 
 ```bash
-voicebox
+voicebox setup
+voicebox doctor
+voicebox run
 ```
 
-The `.env` file is ignored by Git. Never commit real tokens.
+The setup command refuses to overwrite an existing `.env`; the file is ignored by Git
+and created with owner-only permissions. Never commit real tokens.
+
+`ffplay` is preferred for Telegram's Ogg/Opus voice-note format. On macOS it is
+available through the `ffmpeg` package; native `afplay` is kept as a fallback but may
+not decode every Telegram voice note.
 
 ## Development
 
