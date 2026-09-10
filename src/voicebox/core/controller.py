@@ -33,12 +33,15 @@ class VoiceBoxController:
         player: AudioPlayer,
         messenger: StatusMessenger,
         *,
+        state: StateMachine | None = None,
+        interaction_lock: asyncio.Lock | None = None,
         playback_attempts: int = 2,
         retry_delay_seconds: float = 0.25,
     ) -> None:
         if playback_attempts < 1:
             raise ValueError("playback_attempts must be at least 1.")
-        self.state = StateMachine()
+        self.state = state or StateMachine()
+        self._interaction_lock = interaction_lock or asyncio.Lock()
         self._player = player
         self._messenger = messenger
         self._playback_attempts = playback_attempts
@@ -78,34 +81,35 @@ class VoiceBoxController:
                 self._queue.task_done()
 
     async def _process(self, note: VoiceNote) -> None:
-        self.state.transition_to(DeviceState.RECEIVING)
-        self.state.transition_to(DeviceState.PLAYING)
+        async with self._interaction_lock:
+            self.state.transition_to(DeviceState.RECEIVING)
+            self.state.transition_to(DeviceState.PLAYING)
 
-        for attempt in range(1, self._playback_attempts + 1):
-            try:
-                await self._player.play(note.local_path)
-                self.state.transition_to(DeviceState.IDLE)
-                await self._safe_send_status(
-                    note.chat_id,
-                    "✅ VoiceBox played your voice note.",
-                )
-                return
-            except Exception:
-                logger.exception(
-                    "Playback attempt %s/%s failed for %s",
-                    attempt,
-                    self._playback_attempts,
-                    note.local_path.name,
-                )
-                if attempt < self._playback_attempts:
-                    await asyncio.sleep(self._retry_delay_seconds)
+            for attempt in range(1, self._playback_attempts + 1):
+                try:
+                    await self._player.play(note.local_path)
+                    self.state.transition_to(DeviceState.IDLE)
+                    await self._safe_send_status(
+                        note.chat_id,
+                        "✅ VoiceBox played your voice note.",
+                    )
+                    return
+                except Exception:
+                    logger.exception(
+                        "Playback attempt %s/%s failed for %s",
+                        attempt,
+                        self._playback_attempts,
+                        note.local_path.name,
+                    )
+                    if attempt < self._playback_attempts:
+                        await asyncio.sleep(self._retry_delay_seconds)
 
-        self.state.transition_to(DeviceState.ERROR)
-        await self._safe_send_status(
-            note.chat_id,
-            "⚠️ VoiceBox could not play your voice note. Please try again.",
-        )
-        self.state.transition_to(DeviceState.IDLE)
+            self.state.transition_to(DeviceState.ERROR)
+            await self._safe_send_status(
+                note.chat_id,
+                "⚠️ VoiceBox could not play your voice note. Please try again.",
+            )
+            self.state.transition_to(DeviceState.IDLE)
 
     async def _safe_send_status(self, chat_id: str, text: str) -> None:
         try:

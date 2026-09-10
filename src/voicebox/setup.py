@@ -25,9 +25,13 @@ def render_env(token: str, chat_id: int, audio_player: str | None = None) -> str
     lines = [
         f"TELEGRAM_BOT_TOKEN={token}",
         f"TELEGRAM_ALLOWED_CHAT_IDS={chat_id}",
+        f"TELEGRAM_OUTBOUND_CHAT_ID={chat_id}",
         "VOICEBOX_INBOX_DIR=data/inbox",
+        "VOICEBOX_OUTBOX_DIR=data/outbox",
         f"VOICEBOX_AUDIO_PLAYER={audio_player or ''}",
+        "VOICEBOX_AUDIO_INPUT=:0",
         "VOICEBOX_PLAYBACK_ATTEMPTS=2",
+        "VOICEBOX_SEND_ATTEMPTS=2",
         "VOICEBOX_MEDIA_RETENTION_HOURS=24",
     ]
     return "\n".join(lines) + "\n"

@@ -62,6 +62,28 @@ sequenceDiagram
     T-->>F: Delivery status
 ```
 
+## Send flow
+
+```mermaid
+sequenceDiagram
+    participant C as Child interaction
+    participant V as VoiceBox core
+    participant R as FFmpeg recorder
+    participant T as Telegram adapter
+    participant F as Trusted family member
+
+    C->>V: Press Enter
+    V->>V: idle → recording
+    V->>R: Start microphone capture
+    C->>V: Press Enter again
+    R-->>V: Local Ogg/Opus recording
+    V->>V: recording → sending
+    V->>T: Send voice note to approved destination
+    T-->>F: Deliver voice note
+    V->>V: Delete delivered local copy
+    V->>V: sending → idle
+```
+
 ## Design decisions
 
 - **Ports and adapters:** protocols define messaging, audio, and controls; provider SDKs remain at the edges.
@@ -69,10 +91,14 @@ sequenceDiagram
 - **Local-first media:** the core receives a local path, so playback does not depend on provider objects.
 - **One interaction at a time:** the state machine makes device behavior observable and prevents ambiguous transitions.
 - **Serialized playback:** a queue prevents overlapping notes and preserves arrival order.
+- **Serialized interaction:** a shared lock prevents playback and microphone capture from overlapping.
+- **Deterministic routing:** outbound notes go only to an explicitly approved chat.
 - **Bounded recovery:** local playback is retried once before the family receives a failure status.
+- **Private outbound media:** recordings use Ogg/Opus and are deleted after confirmed delivery.
 - **Data minimization:** expired voice-note files are deleted on startup using a configurable policy.
 - **Secrets outside source:** bot credentials are loaded from an ignored `.env` file or the runtime environment.
 
 ## Next implementation slice
 
-Add laptop recording and sending behind the existing recorder and controls protocols.
+Validate microphone permissions and the two-way interaction with adults, then add short
+audio cues and a maximum recording duration before moving controls to Raspberry Pi.

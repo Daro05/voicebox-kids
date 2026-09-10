@@ -24,9 +24,14 @@ class TelegramMessagingAdapter:
         self._allowed_chat_ids = allowed_chat_ids
         self._inbox_dir = inbox_dir
         self._application = Application.builder().token(token).build()
+        self._ready = asyncio.Event()
+        self._startup_error: Exception | None = None
 
     async def run(self, on_voice_note: VoiceNoteHandler) -> None:
         self._inbox_dir.mkdir(parents=True, exist_ok=True)
+        initialized = False
+        application_started = False
+        polling_started = False
 
         async def receive(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             message = update.effective_message
@@ -51,18 +56,38 @@ class TelegramMessagingAdapter:
                 )
             )
 
-        self._application.add_handler(MessageHandler(filters.VOICE, receive))
-        await self._application.initialize()
-        await self._application.start()
-        if self._application.updater is None:
-            raise RuntimeError("Telegram polling updater is unavailable.")
-        await self._application.updater.start_polling(allowed_updates=["message"])
         try:
+            self._application.add_handler(MessageHandler(filters.VOICE, receive))
+            await self._application.initialize()
+            initialized = True
+            await self._application.start()
+            application_started = True
+            if self._application.updater is None:
+                raise RuntimeError("Telegram polling updater is unavailable.")
+            await self._application.updater.start_polling(allowed_updates=["message"])
+            polling_started = True
+            self._ready.set()
             await asyncio.Event().wait()
+        except Exception as exc:
+            self._startup_error = exc
+            raise
         finally:
-            await self._application.updater.stop()
-            await self._application.stop()
-            await self._application.shutdown()
+            self._ready.set()
+            try:
+                if polling_started and self._application.updater is not None:
+                    await self._application.updater.stop()
+            finally:
+                try:
+                    if application_started:
+                        await self._application.stop()
+                finally:
+                    if initialized:
+                        await self._application.shutdown()
+
+    async def wait_until_ready(self) -> None:
+        await self._ready.wait()
+        if self._startup_error is not None:
+            raise RuntimeError("Telegram could not start.") from self._startup_error
 
     async def send_voice_note(self, chat_id: str, path: Path) -> None:
         with path.open("rb") as voice:

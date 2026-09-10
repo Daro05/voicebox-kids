@@ -8,11 +8,11 @@
 - [x] Play downloaded notes through a detected local audio command.
 - [x] Add guided bot verification, chat discovery, and environment diagnostics.
 - [x] Add queued playback, acknowledgements, playback retry, and media retention.
-- [ ] Add a laptop microphone recorder and send path.
+- [x] Add a laptop microphone recorder and send path.
 
 ## Phase 2 — Interaction model
 
-- [ ] Prototype press/hold/release behavior with keyboard input.
+- [x] Prototype press/release behavior with two-step terminal input.
 - [ ] Define LED and audio cues for idle, recording, sending, unread, and error states.
 - [ ] Test the flow with adults acting as both child and family member.
 - [ ] Add timeouts, cancellation, retry, and offline behavior.

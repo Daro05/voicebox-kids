@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from voicebox.core.controller import VoiceBoxController
@@ -95,3 +96,26 @@ async def test_status_failure_does_not_stop_the_queue() -> None:
     await controller.stop()
 
     assert player.calls == ["first.oga", "second.oga"]
+
+
+async def test_playback_waits_for_the_shared_interaction_lock() -> None:
+    player = RecordingPlayer()
+    interaction_lock = asyncio.Lock()
+    await interaction_lock.acquire()
+    controller = VoiceBoxController(
+        player,
+        RecordingMessenger(),
+        interaction_lock=interaction_lock,
+        retry_delay_seconds=0,
+    )
+
+    await controller.start()
+    await controller.submit(note("after-recording.oga"))
+    await asyncio.sleep(0)
+
+    assert player.calls == []
+
+    interaction_lock.release()
+    await controller.stop()
+
+    assert player.calls == ["after-recording.oga"]

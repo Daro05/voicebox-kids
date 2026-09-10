@@ -14,9 +14,13 @@ def test_render_env_contains_only_expected_configuration() -> None:
     assert content == (
         "TELEGRAM_BOT_TOKEN=test-token\n"
         "TELEGRAM_ALLOWED_CHAT_IDS=-123\n"
+        "TELEGRAM_OUTBOUND_CHAT_ID=-123\n"
         "VOICEBOX_INBOX_DIR=data/inbox\n"
+        "VOICEBOX_OUTBOX_DIR=data/outbox\n"
         "VOICEBOX_AUDIO_PLAYER=ffplay\n"
+        "VOICEBOX_AUDIO_INPUT=:0\n"
         "VOICEBOX_PLAYBACK_ATTEMPTS=2\n"
+        "VOICEBOX_SEND_ATTEMPTS=2\n"
         "VOICEBOX_MEDIA_RETENTION_HOURS=24\n"
     )
 

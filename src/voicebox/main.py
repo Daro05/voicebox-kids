@@ -10,9 +10,17 @@ from datetime import timedelta
 from pathlib import Path
 
 from voicebox.audio.player import AudioPlayerUnavailableError, LocalAudioPlayer
+from voicebox.audio.recorder import (
+    AudioRecorderUnavailableError,
+    FfmpegAudioRecorder,
+    resolve_ffmpeg_command,
+)
 from voicebox.core.config import Settings
 from voicebox.core.controller import VoiceBoxController
+from voicebox.core.outbound import OutboundVoiceController
 from voicebox.core.retention import MediaRetentionPolicy
+from voicebox.core.state_machine import StateMachine
+from voicebox.hardware.controls import ConsoleControls
 from voicebox.messaging.telegram import TelegramMessagingAdapter
 from voicebox.setup import run_guided_setup
 
@@ -28,30 +36,67 @@ def configure_logging() -> None:
 async def run_voicebox() -> None:
     settings = Settings.from_env()
     player = LocalAudioPlayer(settings.audio_player)
+    ffmpeg_command = resolve_ffmpeg_command(settings.audio_player)
+    if ffmpeg_command is None:
+        raise AudioRecorderUnavailableError("FFmpeg is required to record voice notes.")
+    recorder = FfmpegAudioRecorder(
+        ffmpeg_command,
+        settings.outbox_dir,
+        input_device=settings.audio_input,
+    )
     messaging = TelegramMessagingAdapter(
         token=settings.telegram_bot_token,
         allowed_chat_ids=settings.allowed_chat_ids,
         inbox_dir=settings.inbox_dir,
     )
-    controller = VoiceBoxController(
+    state = StateMachine()
+    interaction_lock = asyncio.Lock()
+    playback_controller = VoiceBoxController(
         player,
         messaging,
+        state=state,
+        interaction_lock=interaction_lock,
         playback_attempts=settings.playback_attempts,
     )
-    retention = MediaRetentionPolicy(
-        settings.inbox_dir,
-        max_age=timedelta(hours=settings.media_retention_hours),
+    outbound_controller = OutboundVoiceController(
+        recorder,
+        messaging,
+        ConsoleControls(),
+        target_chat_id=str(settings.outbound_chat_id),
+        state=state,
+        interaction_lock=interaction_lock,
+        send_attempts=settings.send_attempts,
     )
-    removed = retention.prune()
+    max_age = timedelta(hours=settings.media_retention_hours)
+    removed = MediaRetentionPolicy(settings.inbox_dir, max_age=max_age).prune()
+    removed += MediaRetentionPolicy(settings.outbox_dir, max_age=max_age).prune()
     if removed:
         logger.info("Removed %s expired voice note(s)", len(removed))
 
-    logger.info("VoiceBox is listening for approved Telegram voice notes")
-    await controller.start()
+    logger.info("VoiceBox is ready for two-way Telegram voice notes")
+    await playback_controller.start()
+    messaging_task = asyncio.create_task(
+        messaging.run(playback_controller.submit),
+        name="voicebox-telegram",
+    )
+    outbound_task: asyncio.Task[None] | None = None
     try:
-        await messaging.run(controller.submit)
+        await messaging.wait_until_ready()
+        outbound_task = asyncio.create_task(
+            outbound_controller.run(),
+            name="voicebox-recording",
+        )
+        await asyncio.gather(messaging_task, outbound_task)
     finally:
-        await controller.stop()
+        if outbound_task is not None:
+            outbound_task.cancel()
+        messaging_task.cancel()
+        await asyncio.gather(
+            messaging_task,
+            *(task for task in [outbound_task] if task is not None),
+            return_exceptions=True,
+        )
+        await playback_controller.stop()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -98,6 +143,13 @@ def doctor() -> bool:
     else:
         print("✗ Audio player: install ffplay or configure VOICEBOX_AUDIO_PLAYER.")
         healthy = False
+
+    ffmpeg_command = resolve_ffmpeg_command(settings.audio_player if settings else None)
+    if ffmpeg_command:
+        print("✓ Microphone recorder available: ffmpeg.")
+    else:
+        print("✗ Microphone recorder: ffmpeg is required.")
+        healthy = False
     return healthy
 
 
@@ -118,7 +170,13 @@ def main() -> None:
         raise SystemExit(asyncio.run(dispatch()))
     except (KeyboardInterrupt, SystemExit):
         raise
-    except (AudioPlayerUnavailableError, FileExistsError, TimeoutError, ValueError) as exc:
+    except (
+        AudioPlayerUnavailableError,
+        AudioRecorderUnavailableError,
+        FileExistsError,
+        TimeoutError,
+        ValueError,
+    ) as exc:
         raise SystemExit(str(exc)) from exc
 
 
