@@ -21,6 +21,7 @@ from voicebox.core.controller import VoiceBoxController
 from voicebox.core.outbound import OutboundVoiceController
 from voicebox.core.retention import MediaRetentionPolicy
 from voicebox.core.state_machine import StateMachine
+from voicebox.hardware.codec_zero import CodecZeroControls
 from voicebox.hardware.controls import ConsoleControls
 from voicebox.messaging.telegram import TelegramMessagingAdapter
 from voicebox.setup import run_guided_setup
@@ -43,12 +44,18 @@ async def run_voicebox() -> None:
     recorder = FfmpegAudioRecorder(
         ffmpeg_command,
         settings.outbox_dir,
+        input_format=settings.audio_input_format,
         input_device=settings.audio_input,
     )
     cues = (
         FfplayStatusCues(player.command)
         if Path(player.command).name == "ffplay"
         else SilentStatusCues()
+    )
+    controls = (
+        CodecZeroControls(cues)
+        if settings.controls_mode == "codec-zero"
+        else ConsoleControls(cues)
     )
     messaging = TelegramMessagingAdapter(
         token=settings.telegram_bot_token,
@@ -67,7 +74,7 @@ async def run_voicebox() -> None:
     outbound_controller = OutboundVoiceController(
         recorder,
         messaging,
-        ConsoleControls(cues),
+        controls,
         target_chat_id=str(settings.outbound_chat_id),
         state=state,
         interaction_lock=interaction_lock,

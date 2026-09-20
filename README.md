@@ -109,6 +109,27 @@ src/voicebox/
 
 The phased build plan is in [ROADMAP.md](docs/ROADMAP.md), and hardware assumptions are tracked in [hardware.md](docs/hardware.md).
 
+## Raspberry Pi preparation
+
+The selected breadboard target is Raspberry Pi Zero 2 WH with Raspberry Pi Codec Zero.
+GPIO Zero is normally included with Raspberry Pi OS; if it is missing, install it with:
+
+```bash
+sudo apt install python3-gpiozero
+```
+
+Then configure the environment with:
+
+```dotenv
+VOICEBOX_CONTROLS=codec-zero
+VOICEBOX_AUDIO_INPUT_FORMAT=alsa
+VOICEBOX_AUDIO_INPUT=default
+```
+
+The Codec Zero adapter maps its button to press/release events and its GPIO23/24 LEDs
+to VoiceBox states. See [the prototype bill of materials](docs/BOM.md) and
+[validation log](docs/VALIDATION.md).
+
 ## Safety and privacy
 
 - Incoming messages are deny-by-default and require an explicit chat allowlist.

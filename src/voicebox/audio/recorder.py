@@ -45,6 +45,7 @@ class FfmpegAudioRecorder:
         command: str,
         output_dir: Path,
         *,
+        input_format: str = "avfoundation",
         input_device: str = ":0",
     ) -> None:
         if not shutil.which(command):
@@ -53,6 +54,7 @@ class FfmpegAudioRecorder:
             )
         self.command = command
         self.output_dir = output_dir
+        self.input_format = input_format
         self.input_device = input_device
         self._process: asyncio.subprocess.Process | None = None
         self._destination: Path | None = None
@@ -64,7 +66,7 @@ class FfmpegAudioRecorder:
             "-loglevel",
             "error",
             "-f",
-            "avfoundation",
+            self.input_format,
             "-i",
             self.input_device,
             "-vn",

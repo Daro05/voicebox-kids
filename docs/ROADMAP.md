@@ -13,6 +13,7 @@
 ## Phase 2 — Interaction model
 
 - [x] Prototype press/release behavior with two-step terminal input.
+- [x] Validate recording, cancellation, automatic limit, and Telegram delivery on laptop.
 - [x] Define the status vocabulary and laptop audio cues for core interaction states.
 - [ ] Map the status vocabulary to Raspberry Pi LEDs.
 - [ ] Test the flow with adults acting as both child and family member.
@@ -21,8 +22,9 @@
 
 ## Phase 3 — Raspberry Pi
 
-- [ ] Select a Raspberry Pi board and supported OS image.
-- [ ] Implement GPIO button and LED adapters.
+- [x] Select Raspberry Pi Zero 2 WH with Raspberry Pi Codec Zero for the breadboard prototype.
+- [x] Implement a tested Codec Zero GPIO button and LED adapter.
+- [ ] Validate the GPIO adapter on physical hardware.
 - [ ] Validate microphone, amplifier, speaker, and power components.
 - [ ] Package the service for automatic startup and safe shutdown.
 - [ ] Add connectivity and health diagnostics without adding a screen.

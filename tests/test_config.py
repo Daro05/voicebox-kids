@@ -17,7 +17,9 @@ def test_settings_parse_allowlist(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.outbound_chat_id == 456
     assert settings.inbox_dir == Path("tmp/inbox")
     assert settings.outbox_dir == Path("data/outbox")
+    assert settings.audio_input_format == "avfoundation"
     assert settings.audio_input == ":0"
+    assert settings.controls_mode == "console"
     assert settings.playback_attempts == 2
     assert settings.send_attempts == 2
     assert settings.max_recording_seconds == 60
@@ -82,4 +84,27 @@ def test_settings_require_destination_for_multiple_chats(
     monkeypatch.delenv("TELEGRAM_OUTBOUND_CHAT_ID", raising=False)
 
     with pytest.raises(ValueError, match="TELEGRAM_OUTBOUND_CHAT_ID"):
+        Settings.from_env()
+
+
+def test_settings_parse_codec_zero_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv("TELEGRAM_ALLOWED_CHAT_IDS", "123")
+    monkeypatch.setenv("VOICEBOX_CONTROLS", "codec-zero")
+    monkeypatch.setenv("VOICEBOX_AUDIO_INPUT_FORMAT", "alsa")
+    monkeypatch.setenv("VOICEBOX_AUDIO_INPUT", "default")
+
+    settings = Settings.from_env()
+
+    assert settings.controls_mode == "codec-zero"
+    assert settings.audio_input_format == "alsa"
+    assert settings.audio_input == "default"
+
+
+def test_settings_reject_unknown_controls_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv("TELEGRAM_ALLOWED_CHAT_IDS", "123")
+    monkeypatch.setenv("VOICEBOX_CONTROLS", "unknown")
+
+    with pytest.raises(ValueError, match="VOICEBOX_CONTROLS"):
         Settings.from_env()

@@ -80,6 +80,10 @@ class OutboundVoiceController:
             if self._owns_interaction:
                 self._recover_to_idle()
                 self._release_interaction()
+            try:
+                await self._controls.close()
+            except Exception:
+                logger.exception("Could not release control resources")
 
     async def handle_event(self, event: ControlEvent) -> None:
         if event is ControlEvent.PRESS:

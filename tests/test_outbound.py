@@ -55,6 +55,9 @@ class RecordingControls:
         if status in {"sent", "offline", "error"}:
             self.sent.set()
 
+    async def close(self) -> None:
+        pass
+
 
 class TimeoutControls(RecordingControls):
     def __init__(self) -> None:

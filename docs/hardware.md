@@ -14,24 +14,26 @@ This validates the interaction before committing to electronics or enclosure dim
 
 ## Raspberry Pi target
 
-The specific bill of materials remains open until the laptop interaction is tested. A likely prototype includes:
+The selected first breadboard platform is Raspberry Pi Zero 2 WH with Raspberry Pi
+Codec Zero. The Codec Zero provides the microphone, mono speaker driver, two status
+LEDs, and a tactile button in the same footprint.
 
-- Raspberry Pi Zero 2 W or another supported Wi-Fi board;
-- momentary push button sized for easy operation;
-- one multicolor LED or a small set of status LEDs;
-- USB or I2S microphone;
-- compact speaker and amplifier;
+- Raspberry Pi Zero 2 WH;
+- Raspberry Pi Codec Zero;
+- compact 8 Ω mono speaker;
 - regulated wall power for early prototypes;
 - optional battery only after charging, protection, and thermal risks are reviewed.
+
+See [BOM.md](BOM.md) for the exact prototype list and official references.
 
 ## Adapter mapping
 
 | Capability | Laptop MVP | Raspberry Pi target |
 |---|---|---|
-| Input | Keyboard | GPIO button |
-| Status | Console logs | LED and audio cues |
-| Recording | Laptop microphone | USB/I2S microphone |
-| Playback | OS audio command | ALSA-compatible output |
+| Input | Keyboard | Codec Zero button on GPIO27 |
+| Status | Console logs | Codec Zero LEDs on GPIO23/24 plus audio cues |
+| Recording | Laptop microphone | Codec Zero MEMS microphone through ALSA |
+| Playback | OS audio command | Codec Zero mono speaker output |
 | Messaging | Telegram polling | Same adapter initially |
 
 ## Status vocabulary

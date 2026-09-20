@@ -28,6 +28,10 @@ class Controls(Protocol):
         """Expose status through console output or LEDs."""
         ...
 
+    async def close(self) -> None:
+        """Release control resources during shutdown."""
+        ...
+
 
 class ConsoleControls:
     """Translate alternating Enter presses into button press/release events."""
@@ -88,3 +92,6 @@ class ConsoleControls:
             await self._cues.play(status)
         except Exception:
             logger.exception("Could not play the %s status cue", status)
+
+    async def close(self) -> None:
+        """Console input does not own persistent hardware resources."""

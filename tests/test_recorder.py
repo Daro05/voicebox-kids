@@ -31,3 +31,21 @@ def test_recorder_builds_macos_ogg_opus_command(
     assert command[command.index("-i") + 1] == ":2"
     assert command[command.index("-c:a") + 1] == "libopus"
     assert command[-1] == str(tmp_path / "note.ogg")
+
+
+def test_recorder_supports_raspberry_pi_alsa_input(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("voicebox.audio.recorder.shutil.which", lambda command: command)
+    recorder = FfmpegAudioRecorder(
+        "/usr/bin/ffmpeg",
+        tmp_path,
+        input_format="alsa",
+        input_device="default",
+    )
+
+    command = recorder.build_command(tmp_path / "note.ogg")
+
+    assert command[command.index("-f") + 1] == "alsa"
+    assert command[command.index("-i") + 1] == "default"

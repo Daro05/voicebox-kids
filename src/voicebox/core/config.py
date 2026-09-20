@@ -17,7 +17,9 @@ class Settings:
     inbox_dir: Path = Path("data/inbox")
     outbox_dir: Path = Path("data/outbox")
     audio_player: str | None = None
+    audio_input_format: str = "avfoundation"
     audio_input: str = ":0"
+    controls_mode: str = "console"
     playback_attempts: int = 2
     send_attempts: int = 2
     max_recording_seconds: int = 60
@@ -61,6 +63,9 @@ class Settings:
         max_recording_seconds = _positive_int("VOICEBOX_MAX_RECORDING_SECONDS", default=60)
         send_timeout_seconds = _positive_int("VOICEBOX_SEND_TIMEOUT_SECONDS", default=15)
         retention_hours = _positive_int("VOICEBOX_MEDIA_RETENTION_HOURS", default=24)
+        controls_mode = os.getenv("VOICEBOX_CONTROLS", "console").strip().lower()
+        if controls_mode not in {"console", "codec-zero"}:
+            raise ValueError("VOICEBOX_CONTROLS must be console or codec-zero.")
 
         return cls(
             telegram_bot_token=token,
@@ -69,7 +74,9 @@ class Settings:
             inbox_dir=Path(os.getenv("VOICEBOX_INBOX_DIR", "data/inbox")),
             outbox_dir=Path(os.getenv("VOICEBOX_OUTBOX_DIR", "data/outbox")),
             audio_player=os.getenv("VOICEBOX_AUDIO_PLAYER") or None,
+            audio_input_format=os.getenv("VOICEBOX_AUDIO_INPUT_FORMAT", "avfoundation"),
             audio_input=os.getenv("VOICEBOX_AUDIO_INPUT", ":0"),
+            controls_mode=controls_mode,
             playback_attempts=playback_attempts,
             send_attempts=send_attempts,
             max_recording_seconds=max_recording_seconds,
