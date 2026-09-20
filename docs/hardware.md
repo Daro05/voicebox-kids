@@ -34,6 +34,18 @@ The specific bill of materials remains open until the laptop interaction is test
 | Playback | OS audio command | ALSA-compatible output |
 | Messaging | Telegram polling | Same adapter initially |
 
+## Status vocabulary
+
+| State | Laptop cue | Raspberry Pi target |
+|---|---|---|
+| Idle | Short ready tone | Soft ready LED |
+| Recording | High start tone | Red recording LED |
+| Sending | Mid tone | Pulsing status LED |
+| Sent | Two ascending tones | Brief green confirmation |
+| Cancelled | Two descending tones | Return to ready LED |
+| Offline | Repeated low tone | Distinct connectivity pattern |
+| Error | Long low tone | Distinct error pattern |
+
 ## Physical design constraints
 
 - No exposed conductors, sharp edges, or accessible small fasteners.

@@ -23,7 +23,7 @@ _TRANSITIONS: dict[DeviceState, set[DeviceState]] = {
     DeviceState.IDLE: {DeviceState.RECEIVING, DeviceState.RECORDING},
     DeviceState.RECEIVING: {DeviceState.PLAYING, DeviceState.ERROR},
     DeviceState.PLAYING: {DeviceState.IDLE, DeviceState.ERROR},
-    DeviceState.RECORDING: {DeviceState.SENDING, DeviceState.ERROR},
+    DeviceState.RECORDING: {DeviceState.IDLE, DeviceState.SENDING, DeviceState.ERROR},
     DeviceState.SENDING: {DeviceState.IDLE, DeviceState.ERROR},
     DeviceState.ERROR: {DeviceState.IDLE},
 }

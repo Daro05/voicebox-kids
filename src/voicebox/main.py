@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
 
+from voicebox.audio.cues import FfplayStatusCues, SilentStatusCues
 from voicebox.audio.player import AudioPlayerUnavailableError, LocalAudioPlayer
 from voicebox.audio.recorder import (
     AudioRecorderUnavailableError,
@@ -44,6 +45,11 @@ async def run_voicebox() -> None:
         settings.outbox_dir,
         input_device=settings.audio_input,
     )
+    cues = (
+        FfplayStatusCues(player.command)
+        if Path(player.command).name == "ffplay"
+        else SilentStatusCues()
+    )
     messaging = TelegramMessagingAdapter(
         token=settings.telegram_bot_token,
         allowed_chat_ids=settings.allowed_chat_ids,
@@ -61,11 +67,13 @@ async def run_voicebox() -> None:
     outbound_controller = OutboundVoiceController(
         recorder,
         messaging,
-        ConsoleControls(),
+        ConsoleControls(cues),
         target_chat_id=str(settings.outbound_chat_id),
         state=state,
         interaction_lock=interaction_lock,
         send_attempts=settings.send_attempts,
+        max_recording_seconds=settings.max_recording_seconds,
+        send_timeout_seconds=settings.send_timeout_seconds,
     )
     max_age = timedelta(hours=settings.media_retention_hours)
     removed = MediaRetentionPolicy(settings.inbox_dir, max_age=max_age).prune()

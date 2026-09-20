@@ -75,7 +75,7 @@ sequenceDiagram
     C->>V: Press Enter
     V->>V: idle → recording
     V->>R: Start microphone capture
-    C->>V: Press Enter again
+    C->>V: Press Enter again, cancel, or reach time limit
     R-->>V: Local Ogg/Opus recording
     V->>V: recording → sending
     V->>T: Send voice note to approved destination
@@ -94,11 +94,15 @@ sequenceDiagram
 - **Serialized interaction:** a shared lock prevents playback and microphone capture from overlapping.
 - **Deterministic routing:** outbound notes go only to an explicitly approved chat.
 - **Bounded recovery:** local playback is retried once before the family receives a failure status.
+- **Bounded capture and delivery:** recording length and each Telegram upload have explicit timeouts.
+- **Recoverable offline state:** network failures keep the encoded note locally and emit a distinct cue.
+- **Intentional cancellation:** cancelling stops capture, deletes the partial note, and returns to idle.
+- **Screen-free feedback:** generated tones identify ready, recording, delivery, cancellation, and errors.
 - **Private outbound media:** recordings use Ogg/Opus and are deleted after confirmed delivery.
 - **Data minimization:** expired voice-note files are deleted on startup using a configurable policy.
 - **Secrets outside source:** bot credentials are loaded from an ignored `.env` file or the runtime environment.
 
 ## Next implementation slice
 
-Validate microphone permissions and the two-way interaction with adults, then add short
-audio cues and a maximum recording duration before moving controls to Raspberry Pi.
+Validate the hardened two-way interaction with two adults, document privacy decisions,
+then move the same state and cue vocabulary to Raspberry Pi controls.

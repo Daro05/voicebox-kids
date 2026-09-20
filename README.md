@@ -18,6 +18,8 @@ The repository includes a two-way Telegram voice-note flow:
 8. press Enter to start a microphone recording;
 9. press Enter again to encode it as Ogg/Opus and send it to the trusted chat;
 10. retry a failed upload once and remove the local recording after delivery.
+11. play short tones for ready, recording, sending, success, cancellation, and errors;
+12. stop and send automatically at the configured recording limit.
 
 The laptop uses two Enter presses because terminals cannot reliably detect key release.
 The provider-neutral control contract still exposes press/release events so Raspberry Pi
@@ -68,6 +70,8 @@ voicebox run
 ```
 
 Once running, press Enter to begin recording and press Enter again to stop and send.
+Type `c` and press Enter while recording to cancel and discard it. Recordings stop and
+send automatically after 60 seconds by default.
 On the first recording, macOS may ask for microphone access; allow it for the terminal
 application where VoiceBox is running.
 
@@ -78,7 +82,8 @@ Playback defaults to two attempts, and downloaded audio older than 24 hours is r
 at startup. Both values can be changed with `VOICEBOX_PLAYBACK_ATTEMPTS` and
 `VOICEBOX_MEDIA_RETENTION_HOURS`. Uploads default to two attempts and can be changed
 with `VOICEBOX_SEND_ATTEMPTS`. `TELEGRAM_OUTBOUND_CHAT_ID` selects the destination
-when more than one trusted chat is configured.
+when more than one trusted chat is configured. `VOICEBOX_MAX_RECORDING_SECONDS`
+controls the recording limit, while `VOICEBOX_SEND_TIMEOUT_SECONDS` bounds each upload.
 
 `ffplay` is preferred for Telegram's Ogg/Opus voice-note format. On macOS it is
 available through the `ffmpeg` package; native `afplay` is kept as a fallback but may
@@ -109,6 +114,7 @@ The phased build plan is in [ROADMAP.md](docs/ROADMAP.md), and hardware assumpti
 - Incoming messages are deny-by-default and require an explicit chat allowlist.
 - Downloaded notes and failed outgoing recordings use the configured retention window.
 - Successfully sent recordings are deleted from the device immediately.
+- Cancelled recordings are deleted immediately; offline recordings remain local for recovery.
 - The device should be tested by an adult before use and should not be treated as an emergency communication channel.
 - Secrets belong in local environment variables, never in source control.
 

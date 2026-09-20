@@ -21,6 +21,8 @@ def test_render_env_contains_only_expected_configuration() -> None:
         "VOICEBOX_AUDIO_INPUT=:0\n"
         "VOICEBOX_PLAYBACK_ATTEMPTS=2\n"
         "VOICEBOX_SEND_ATTEMPTS=2\n"
+        "VOICEBOX_MAX_RECORDING_SECONDS=60\n"
+        "VOICEBOX_SEND_TIMEOUT_SECONDS=15\n"
         "VOICEBOX_MEDIA_RETENTION_HOURS=24\n"
     )
 

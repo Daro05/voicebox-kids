@@ -18,3 +18,12 @@ def test_invalid_transition_is_rejected() -> None:
 
     with pytest.raises(InvalidTransitionError):
         machine.transition_to(DeviceState.SENDING)
+
+
+def test_recording_can_be_cancelled_to_idle() -> None:
+    machine = StateMachine()
+
+    machine.transition_to(DeviceState.RECORDING)
+    machine.transition_to(DeviceState.IDLE)
+
+    assert machine.state is DeviceState.IDLE

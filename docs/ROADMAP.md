@@ -13,9 +13,10 @@
 ## Phase 2 — Interaction model
 
 - [x] Prototype press/release behavior with two-step terminal input.
-- [ ] Define LED and audio cues for idle, recording, sending, unread, and error states.
+- [x] Define the status vocabulary and laptop audio cues for core interaction states.
+- [ ] Map the status vocabulary to Raspberry Pi LEDs.
 - [ ] Test the flow with adults acting as both child and family member.
-- [ ] Add timeouts, cancellation, retry, and offline behavior.
+- [x] Add recording/upload timeouts, cancellation, retry, and offline preservation.
 - [ ] Document child-safety, privacy, consent, and data-deletion decisions.
 
 ## Phase 3 — Raspberry Pi

@@ -7,9 +7,10 @@ import logging
 from pathlib import Path
 
 from telegram import Update
+from telegram.error import NetworkError
 from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
-from voicebox.messaging.base import VoiceNote, VoiceNoteHandler
+from voicebox.messaging.base import MessagingUnavailableError, VoiceNote, VoiceNoteHandler
 
 logger = logging.getLogger(__name__)
 
@@ -90,8 +91,11 @@ class TelegramMessagingAdapter:
             raise RuntimeError("Telegram could not start.") from self._startup_error
 
     async def send_voice_note(self, chat_id: str, path: Path) -> None:
-        with path.open("rb") as voice:
-            await self._application.bot.send_voice(chat_id=int(chat_id), voice=voice)
+        try:
+            with path.open("rb") as voice:
+                await self._application.bot.send_voice(chat_id=int(chat_id), voice=voice)
+        except NetworkError as exc:
+            raise MessagingUnavailableError("Telegram is unavailable.") from exc
 
     async def send_text(self, chat_id: str, text: str) -> None:
         await self._application.bot.send_message(chat_id=int(chat_id), text=text)

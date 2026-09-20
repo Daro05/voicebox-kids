@@ -19,6 +19,10 @@ class VoiceNote:
 VoiceNoteHandler = Callable[[VoiceNote], Awaitable[None]]
 
 
+class MessagingUnavailableError(RuntimeError):
+    """Raised when the provider cannot be reached after a send attempt."""
+
+
 class MessagingAdapter(Protocol):
     async def run(self, on_voice_note: VoiceNoteHandler) -> None:
         """Receive messages until the process is stopped."""

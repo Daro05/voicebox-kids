@@ -32,6 +32,8 @@ def render_env(token: str, chat_id: int, audio_player: str | None = None) -> str
         "VOICEBOX_AUDIO_INPUT=:0",
         "VOICEBOX_PLAYBACK_ATTEMPTS=2",
         "VOICEBOX_SEND_ATTEMPTS=2",
+        "VOICEBOX_MAX_RECORDING_SECONDS=60",
+        "VOICEBOX_SEND_TIMEOUT_SECONDS=15",
         "VOICEBOX_MEDIA_RETENTION_HOURS=24",
     ]
     return "\n".join(lines) + "\n"

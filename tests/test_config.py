@@ -20,6 +20,8 @@ def test_settings_parse_allowlist(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.audio_input == ":0"
     assert settings.playback_attempts == 2
     assert settings.send_attempts == 2
+    assert settings.max_recording_seconds == 60
+    assert settings.send_timeout_seconds == 15
     assert settings.media_retention_hours == 24
 
 
@@ -28,12 +30,16 @@ def test_settings_parse_reliability_options(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("TELEGRAM_ALLOWED_CHAT_IDS", "123")
     monkeypatch.setenv("VOICEBOX_PLAYBACK_ATTEMPTS", "3")
     monkeypatch.setenv("VOICEBOX_SEND_ATTEMPTS", "4")
+    monkeypatch.setenv("VOICEBOX_MAX_RECORDING_SECONDS", "45")
+    monkeypatch.setenv("VOICEBOX_SEND_TIMEOUT_SECONDS", "8")
     monkeypatch.setenv("VOICEBOX_MEDIA_RETENTION_HOURS", "48")
 
     settings = Settings.from_env()
 
     assert settings.playback_attempts == 3
     assert settings.send_attempts == 4
+    assert settings.max_recording_seconds == 45
+    assert settings.send_timeout_seconds == 8
     assert settings.media_retention_hours == 48
 
 
@@ -42,6 +48,8 @@ def test_settings_parse_reliability_options(monkeypatch: pytest.MonkeyPatch) -> 
     [
         ("VOICEBOX_PLAYBACK_ATTEMPTS", "0"),
         ("VOICEBOX_SEND_ATTEMPTS", "-1"),
+        ("VOICEBOX_MAX_RECORDING_SECONDS", "0"),
+        ("VOICEBOX_SEND_TIMEOUT_SECONDS", "invalid"),
         ("VOICEBOX_MEDIA_RETENTION_HOURS", "not-a-number"),
     ],
 )

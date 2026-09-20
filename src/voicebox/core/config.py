@@ -20,6 +20,8 @@ class Settings:
     audio_input: str = ":0"
     playback_attempts: int = 2
     send_attempts: int = 2
+    max_recording_seconds: int = 60
+    send_timeout_seconds: int = 15
     media_retention_hours: int = 24
 
     @classmethod
@@ -56,6 +58,8 @@ class Settings:
 
         playback_attempts = _positive_int("VOICEBOX_PLAYBACK_ATTEMPTS", default=2)
         send_attempts = _positive_int("VOICEBOX_SEND_ATTEMPTS", default=2)
+        max_recording_seconds = _positive_int("VOICEBOX_MAX_RECORDING_SECONDS", default=60)
+        send_timeout_seconds = _positive_int("VOICEBOX_SEND_TIMEOUT_SECONDS", default=15)
         retention_hours = _positive_int("VOICEBOX_MEDIA_RETENTION_HOURS", default=24)
 
         return cls(
@@ -68,6 +72,8 @@ class Settings:
             audio_input=os.getenv("VOICEBOX_AUDIO_INPUT", ":0"),
             playback_attempts=playback_attempts,
             send_attempts=send_attempts,
+            max_recording_seconds=max_recording_seconds,
+            send_timeout_seconds=send_timeout_seconds,
             media_retention_hours=retention_hours,
         )
 
